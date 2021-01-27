@@ -1,25 +1,38 @@
 
 from flask import Flask, Blueprint, jsonify, request
+import json
 
 Items = Blueprint("Items", __name__)
 
 class items:
-    stock = list()
+  stock = dict()
+  stockList = list()
 
-    def __init__(self, id, name):
-        self.id = id
-        self.name = name
-        
-    def get(self):
-        return {"id": self.id, "name": self.name}
+  @classmethod
+  def loadData(cls, filename):
+    file = open(filename)
+    cls.stockList = json.load(file)
+    file.close()
+    for data in cls.stockList:
+      cls.stock[data["id"]] = data
 
-@Items.route("/api/getitems", methods=["GET"])
+  def __init__(self, id, name):
+    self.id = id
+    self.name = name
+	    
+  def get(self):
+  	return {"id": self.id, "name": self.name}
+
+@Items.route("/api/getallitems", methods=["GET"])
 def getItems():
-    print("get call")
-    itemstock = list()
-    for item in items.stock:
-        itemstock.append(item.get())
-    return jsonify(itemstock)
+  print("get call")
+  return jsonify(items.stockList)
 
-items.stock.append(items("7777", "NVIDA-3090"))
-items.stock.append(items("7770", "AMD-threadrepper"))
+@Items.route("/api/getitems", methods=["POST"])
+def requestItems():
+  req = request.get_json()
+  res = list()
+  for id in req["ids"]:
+    if (id in items.stock.keys()):
+      res.append(items.stock[id])
+  return jsonify(res)
